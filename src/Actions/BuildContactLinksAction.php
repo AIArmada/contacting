@@ -6,19 +6,25 @@ namespace AIArmada\Contacting\Actions;
 
 use AIArmada\Contacting\Data\ContactLinksData;
 use AIArmada\Contacting\Models\ContactMethod;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 final class BuildContactLinksAction
 {
-    /**
-     * @param  Model  $contactable
-     */
     public function forContactable(Model $contactable): ContactLinksData
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, ContactMethod> $contactMethods */
-        $contactMethods = $contactable->contactMethods;
+        if (! method_exists($contactable, 'contactMethods')) {
+            return $this->execute([]);
+        }
 
-        return $this->execute($contactMethods);
+        $contactMethods = call_user_func([$contactable, 'contactMethods']);
+
+        if (! $contactMethods instanceof MorphMany) {
+            return $this->execute([]);
+        }
+
+        return $this->execute($contactMethods->get());
     }
 
     /**
